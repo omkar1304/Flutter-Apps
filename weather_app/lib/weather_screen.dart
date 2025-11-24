@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:weather_app/additional_info_item.dart';
 import 'package:weather_app/hourly_forecast_item.dart';
 import 'package:weather_app/weather_subheading.dart';
@@ -24,7 +25,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
 
   Future<Map<String, dynamic>> getCurrentWeather() async {
     try {
-      String cityName = "London";
+      String cityName = "Mumbai";
       String appId = "f172851d598fb92b2755ba28e81dfa71";
       final res = await http.get(
         Uri.parse(
@@ -52,7 +53,14 @@ class _WeatherScreenState extends State<WeatherScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        actions: [IconButton(onPressed: () {}, icon: Icon(Icons.refresh))],
+        actions: [
+          IconButton(
+            onPressed: () {
+              setState(() {});
+            },
+            icon: Icon(Icons.refresh),
+          ),
+        ],
       ),
       body: FutureBuilder(
         future: getCurrentWeather(),
@@ -69,7 +77,12 @@ class _WeatherScreenState extends State<WeatherScreen> {
 
           // Data Flow
           final data = asyncSnapshot.data;
-          final currentTemp = data?["list"][0]["main"]["temp"];
+          final currentWeatherData = data?["list"][0];
+          final currentTemp = currentWeatherData["main"]["temp"];
+          final currentSky = currentWeatherData["weather"][0]["main"];
+          final currentPressure = currentWeatherData["main"]["pressure"];
+          final currentWindSpeed = currentWeatherData["wind"]["speed"];
+          final currentHumidity = currentWeatherData["main"]["humidity"];
 
           return Padding(
             padding: EdgeInsetsGeometry.all(16.0),
@@ -96,8 +109,13 @@ class _WeatherScreenState extends State<WeatherScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Icon(Icons.cloud, size: 64),
-                            Text("Rain", style: TextStyle(fontSize: 24)),
+                            Icon(
+                              currentSky == "Clouds" || currentSky == "Rain"
+                                  ? Icons.cloud
+                                  : Icons.sunny,
+                              size: 64,
+                            ),
+                            Text(currentSky, style: TextStyle(fontSize: 24)),
                           ],
                         ),
                       ),
@@ -105,7 +123,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                   ),
                 ),
                 SizedBox(height: 20),
-                //? Weather Forecase
+                //? Weather Forecast
                 SizedBox(
                   width: double.infinity,
                   child: Column(
@@ -113,36 +131,64 @@ class _WeatherScreenState extends State<WeatherScreen> {
                     children: [
                       WeatherSubheading(title: "Weather Forecast"),
                       SizedBox(height: 16),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            HourlyForecastItem(
-                              time: "09:00",
-                              icon: Icons.cloud,
-                              temperature: "301.17",
-                            ),
-                            HourlyForecastItem(
-                              time: "09:00",
-                              icon: Icons.cloud,
-                              temperature: "301.17",
-                            ),
-                            HourlyForecastItem(
-                              time: "09:00",
-                              icon: Icons.cloud,
-                              temperature: "301.17",
-                            ),
-                            HourlyForecastItem(
-                              time: "09:00",
-                              icon: Icons.cloud,
-                              temperature: "301.17",
-                            ),
-                            HourlyForecastItem(
-                              time: "09:00",
-                              icon: Icons.cloud,
-                              temperature: "301.17",
-                            ),
-                          ],
+                      // Creates a all items at once -> not good for performance
+
+                      // SingleChildScrollView(
+                      //   scrollDirection: Axis.horizontal,
+                      //   child: Row(
+                      //     children: [
+                      //       HourlyForecastItem(
+                      //         time: "09:00",
+                      //         icon: Icons.cloud,
+                      //         temperature: "301.17",
+                      //       ),
+                      //       HourlyForecastItem(
+                      //         time: "09:00",
+                      //         icon: Icons.cloud,
+                      //         temperature: "301.17",
+                      //       ),
+                      //       HourlyForecastItem(
+                      //         time: "09:00",
+                      //         icon: Icons.cloud,
+                      //         temperature: "301.17",
+                      //       ),
+                      //       HourlyForecastItem(
+                      //         time: "09:00",
+                      //         icon: Icons.cloud,
+                      //         temperature: "301.17",
+                      //       ),
+                      //       HourlyForecastItem(
+                      //         time: "09:00",
+                      //         icon: Icons.cloud,
+                      //         temperature: "301.17",
+                      //       ),
+                      //     ],
+                      //   ),
+                      // ),
+
+                      // Creates items on demand - better for performance
+                      SizedBox(
+                        height: 130,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: 5,
+                          itemBuilder: (context, index) {
+                            final hourlyForecast = data?["list"][index + 1];
+                            final hourlySky =
+                                hourlyForecast["weather"][0]["main"];
+                            final hourlyTemp = hourlyForecast["main"]["temp"]
+                                .toString();
+                            final hourlyTime = DateTime.parse(
+                              hourlyForecast["dt_txt"],
+                            );
+                            return HourlyForecastItem(
+                              time: DateFormat.j().format(hourlyTime),
+                              icon: hourlySky == "Clouds" || hourlySky == "Rain"
+                                  ? Icons.cloud
+                                  : Icons.sunny,
+                              temperature: hourlyTemp,
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -163,17 +209,17 @@ class _WeatherScreenState extends State<WeatherScreen> {
                           AdditionalInfoItem(
                             icon: Icons.water_drop,
                             label: "Humidity",
-                            value: "94",
+                            value: currentHumidity.toString(),
                           ),
                           AdditionalInfoItem(
                             icon: Icons.air,
                             label: "Wind Speed",
-                            value: "7.67",
+                            value: currentWindSpeed.toString(),
                           ),
                           AdditionalInfoItem(
                             icon: Icons.beach_access,
                             label: "Pressure",
-                            value: "1006",
+                            value: currentPressure.toString(),
                           ),
                         ],
                       ),

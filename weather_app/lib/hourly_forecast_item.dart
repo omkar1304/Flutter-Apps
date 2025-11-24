@@ -22,13 +22,15 @@ class HourlyForecastItem extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                "09:00",
+                time,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
               SizedBox(height: 8),
-              Icon(Icons.cloud, size: 32),
+              Icon(icon, size: 32),
               SizedBox(height: 8),
-              Text("301.17"),
+              Text(temperature),
             ],
           ),
         ),
